@@ -8,3 +8,5 @@ Also built: password reset (hashed, single-use, 30-min tokens) + forced change o
 Also built: override button in the conflict screen (admin), waitlist (join + notify oldest eligible user when a slot frees), API tests in server/tests (auth, RBAC, approval/rejection, maintenance, QR valid/invalid/revoked/expired, password reset, override, waitlist, concurrency).
 Also built: predictive conflict warning (same slot, previous 8 weeks), natural-language smart match (rule-based parser, no API key), HTML emails with action buttons, admin priority configuration (role -> default booking priority).
 Spec items not built: none that I know of. Everything is unrun: expect to fix small errors on first launch.
+
+Last synchronized to GitHub: 2026-10-02.
