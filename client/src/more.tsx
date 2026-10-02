@@ -18,7 +18,7 @@ export function AuthFlow({ onDone }: { onDone: (u: any) => void }) {
   };
   const submit = (e: FormEvent<HTMLFormElement>) => {
     const f = form(e); setMsg('');
-    if (mode === 'login') run('/auth/login', { identifier: f.identifier, password: f.password, otp: f.otp }, r => { const u = { ...r, fullName: r.name }; if (r.mustChangePassword) { setPending(u); setMode('change'); } else onDone(u); });
+    if (mode === 'login') run('/auth/login', { identifier: f.identifier, password: f.password, otp: f.otp || undefined }, r => { const u = { ...r, fullName: r.name }; if (r.mustChangePassword) { setPending(u); setMode('change'); } else onDone(u); });
     else if (mode === 'forgot') run('/auth/forgot-password', f, () => setMsg('If that account exists, a reset link has been emailed.'));
     else if (mode === 'reset') run('/auth/reset-password', { token: tok, password: f.password }, () => { history.replaceState(null, '', '/'); setMode('login'); setMsg('Password updated. Please sign in.'); });
     else run('/auth/change-password', f, () => onDone(pending));
