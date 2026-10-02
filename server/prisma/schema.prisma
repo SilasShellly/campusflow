@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  RESOURCE_MANAGER
+  FACULTY
+  STUDENT
+}
+
+enum BookingStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum ResourceType {
+  CLASSROOM
+  COMPUTER_LAB
+  SEMINAR_HALL
+  AUDITORIUM
+  CONFERENCE_ROOM
+  SPORTS_FACILITY
+  EQUIPMENT
+  VEHICLE
+}
+
+enum ResourceStatus {
+  ACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
+enum AffiliationType {
+  STUDENT_BODY
+  DEPARTMENT
+}
+
+model User {
+  id                  String          @id @default(cuid())
+  email               String          @unique
+  fullName            String
+  phone               String?
+  institutionId       String?
+  studentId           String?
+  department          String?
+  affiliationType     AffiliationType?
+  affiliationName     String?
+  emailVerified       Boolean         @default(true)
+  passwordHash        String
+  mustChangePassword  Boolean         @default(true)
+  role                Role
+  disabled            Boolean         @default(false)
+  bookings            Booking[]
+  createdAt           DateTime        @default(now())
+}
+
+model Resource {
+  id                String         @id @default(cuid())
+  name              String
+  type              ResourceType
+  building          String
+  floor             Int
+  capacity          Int
+  facilities       String[]
+  approvalRequired Boolean       @default(true)
+  maxDurationMin    Int            @default(480)
+  status            ResourceStatus @default(ACTIVE)
+  bookings          Booking[]
+  blocks            ResourceBlock[]
+
+  @@index([type, building])
+}
+
+model Booking {
+  id             String               @id @default(cuid())
+  seq            Int                  @default(autoincrement())
+  resourceId     String
+  requesterId    String
+  title          String
+  purpose        String?
+  attendees      Int
+  priority       Priority             @default(NORMAL)
+  reminderSentAt DateTime?
+  status         BookingStatus        @default(PENDING)
+  startTime      DateTime             @db.Timestamptz
+  endTime        DateTime             @db.Timestamptz
+  resource       Resource             @relation(fields: [resourceId], references: [id])
+  requester      User                 @relation(fields: [requesterId], references: [id])
+  history        BookingStatusHistory[]
+  tokens         BookingToken[]
+  createdAt      DateTime             @default(now())
+
+  @@index([resourceId, startTime, endTime])
+}
+
+model BookingStatusHistory {
+  id        String         @id @default(cuid())
+  bookingId String
+  fromStatus BookingStatus?
+  toStatus  BookingStatus
+  actorId   String?
+  reason    String?
+  at        DateTime       @default(now())
+  booking   Booking        @relation(fields: [bookingId], references: [id])
+}
+
+model ResourceBlock {
+  id        String   @id @default(cuid())
+  resourceId String
+  reason    String
+  startTime DateTime @db.Timestamptz
+  endTime   DateTime @db.Timestamptz
+  resource  Resource @relation(fields: [resourceId], references: [id])
+
+  @@index([resourceId, startTime, endTime])
+}
+
+model BookingToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  bookingId String
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  booking   Booking   @relation(fields: [bookingId], references: [id])
+}
+
+model EmailOtp {
+  id        String    @id @default(cuid())
+  email     String
+  code      String
+  codeHash  String
+  purpose   String    @default("EMAIL_VERIFICATION")
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, purpose])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  toEmail   String
+  subject   String
+  status    String
+  attempts  Int      @default(0)
+  error     String?
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  oldValue  Json?
+  newValue  Json?
+  at        DateTime @default(now())
+
+  @@index([at])
+}
+
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  userId     String
+  expiresAt  DateTime
+  usedAt     DateTime?
+}
+
+model Waitlist {
+  id        String   @id @default(cuid())
+  userId    String
+  resourceId String
+  title     String
+  attendees Int
+  startTime DateTime @db.Timestamptz
+  endTime   DateTime @db.Timestamptz
+  notifiedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([resourceId, startTime])
+}
+
+model PriorityRule {
+  role     Role @id
+  priority Priority
+}
